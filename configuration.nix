@@ -84,14 +84,15 @@
   environment.systemPackages = with pkgs; [
 	neovim  	
  	wget
+	hyfetch
 	fastfetch
 	waybar
 	kitty
 	hyprpaper
-	tofi
 	git
 	wl-clipboard
-	lynx
+	firefox
+	rofi
   ];
 
 
