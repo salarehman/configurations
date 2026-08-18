@@ -48,7 +48,7 @@ local menu        = "rofi"
 -- Or execute your favorite apps at launch like this:
 --
 hl.on("hyprland.start", function () 
-	hl.exec_cmd("waybar & hyprpaper & firefox")
+	hl.exec_cmd("waybar & hyprpaper & firefox & wtype")
 end)
 
 
@@ -255,18 +255,31 @@ hl.device({
 ---------------------
 
 local mainMod = "SUPER" -- Sets "Windows" key as main modifier
+local altMod = "ALT"
 
 -- Example binds, see https://wiki.hypr.land/Configuring/Basics/Binds/ for more
 hl.bind(mainMod .. " + Q", hl.dsp.exec_cmd(terminal))
 local closeWindowBind = hl.bind(mainMod .. " + C", hl.dsp.window.close())
 -- closeWindowBind:set_enabled(false)
 hl.bind(mainMod .. " + M", hl.dsp.exec_cmd("command -v hyprshutdown >/dev/null 2>&1 && hyprshutdown || hyprctl dispatch 'hl.dsp.exit()'"))
-hl.bind(mainMod .. " + F", hl.dsp.exec_cmd(fileManager))
+hl.bind(mainMod .. " + space", hl.dsp.exec_cmd("rofi -show drun"))
 hl.bind(mainMod .. " + V", hl.dsp.window.float({ action = "toggle" }))
-hl.bind(mainMod .. " + space", hl.dsp.exec_cmd(menu))
+hl.bind(mainMod .. " + F", hl.dsp.exec_cmd("yazi"))
 hl.bind(mainMod .. " + P", hl.dsp.exec_cmd("poweroff"))
-hl.bind(mainMod .. " + J", hl.dsp.layout("togglesplit"))    -- dwindle only
+hl.bind(mainMod .. " + J", hl.dsp.layout("togglesplit"))
 
+
+
+
+-- fx broen eys 
+hl.bind(altMod .. " + u", hl.dsp.exec_cmd("wtype i"))
+hl.bind(altMod .. " + j", hl.dsp.exec_cmd("wtype k"))
+hl.bind(altMod .. " + p", hl.dsp.exec_cmd("wtype '~ '"))
+hl.bind(altMod .. " + l", hl.dsp.exec_cmd("wtype ]"))
+hl.bind(altMod .. " + m", hl.dsp.exec_cmd("wtype ';'"))
+
+    -- dwindle only
+hl.bind(mainMod .. " + ", hl.dsp.layout("togglesplit"))
 -- Move focus with mainMod + arrow keys
 hl.bind(mainMod .. " + left",  hl.dsp.focus({ direction = "left" }))
 hl.bind(mainMod .. " + right", hl.dsp.focus({ direction = "right" }))

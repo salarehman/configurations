@@ -91,6 +91,7 @@
 	hyprpaper
 	git
 	anki-bin
+	wtype
 	wl-clipboard
 	firefox
 	rofi
