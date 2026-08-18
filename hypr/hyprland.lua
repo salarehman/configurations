@@ -22,6 +22,11 @@ hl.monitor({
     scale    = "auto",
 })
 
+   hl.config({
+	xwayland ={
+        force_zero_scaling = true,
+	},
+    })
 
 ---------------------
 ---- MY PROGRAMS ----
@@ -29,8 +34,8 @@ hl.monitor({
 
 -- Set programs that you use
 local terminal    = "kitty"
-local fileManager = "dolphin"
-local menu        = "tofi"
+	local fileManager = "dolphin"
+local menu        = "rofi"
 
 
 -------------------
@@ -65,11 +70,11 @@ hl.env("HYPRCURSOR_SIZE", "24")
 -- Please note permission changes here require a Hyprland restart and are not applied on-the-fly
 -- for security reasons
 
--- hl.config({
---   ecosystem = {
---     enforce_permissions = true,
---   },
--- })
+hl.config({
+   ecosystem = {
+     enforce_permissions = true,
+   },
+ })
 
 -- hl.permission("/usr/(bin|local/bin)/grim", "screencopy", "allow")
 -- hl.permission("/usr/(lib|libexec|lib64)/xdg-desktop-portal-hyprland", "screencopy", "allow")
@@ -84,13 +89,13 @@ hl.env("HYPRCURSOR_SIZE", "24")
 hl.config({
     general = {
         gaps_in  = 5,
-        gaps_out = 20,
+        gaps_out = 10,
 
         border_size = 2,
 
         col = {
-            active_border   = { colors = {"rgba(33ccffee)", "rgba(00ff99ee)"}, angle = 45 },
-            inactive_border = "rgba(595959aa)",
+            active_border   = { colors = {"rgba(255, 66, 164,08)"}, angle = 45 },
+            inactive_border = "rgba(200,150,176,0.8)",
         },
 
         -- Set to true to enable resizing windows by clicking and dragging on borders and gaps
