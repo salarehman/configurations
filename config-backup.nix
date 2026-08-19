@@ -5,7 +5,7 @@ let
   # EDIT THESE FOUR VALUES FOR YOUR SETUP
   # -----------------------------------------------------------------
   configDir   = "/home/sabotabby/.config";                      # folder to watch & push
-  botSshKey   = "/home/sabotabby/secrets/github/botkey.pub";    # PRIVATE key path, kept outside configDir
+  botSshKey   = "/home/sabotabby/secrets/github/botkey";    # PRIVATE key path, kept outside configDir
   botGitName  = "Lily-Jiji";
   botGitEmail = "salahdin.ur-rehman@proton.me";
   repoUrl     = "git@github.com:salarehman/configurations.git"; 
