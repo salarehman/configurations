@@ -40,7 +40,7 @@ let
 
       if ! ${pkgs.git}/bin/git diff --cached --quiet; then
         TIMESTAMP="$(date +"%Y-%m-%d_%H-%M-%S")"
-        HOST="$(hostname)"
+        HOST="$(cat /etc/hostname)"
         ${pkgs.git}/bin/git commit -m "auto-backup: ''${HOST} ''${TIMESTAMP}"
         ${pkgs.git}/bin/git push origin HEAD
       fi
@@ -94,6 +94,9 @@ in
     wants = [ "network-online.target" ];
     wantedBy = [ "multi-user.target" ];
     serviceConfig = {
+      User = "sabotabby";
+      Group = "users";
+      Environment = "HOME=/home/sabotabby";
       ExecStart = "${backupScript}";
       Restart = "always";
       RestartSec = 5;
