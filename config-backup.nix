@@ -1,28 +1,17 @@
-
 { config, pkgs, ... }:
 
 let
-  # -----------------------------------------------------------------
-  # EDIT THESE FOUR VALUES FOR YOUR SETUP
-  # -----------------------------------------------------------------
-  configDir   = "/home/sabotabby/.config";                      # folder to watch & push
-  botSshKey   = "/home/sabotabby/secrets/github/botkey";    # PRIVATE key path, kept outside configDir
+  configDir   = "/home/sabotabby/.config";
+  botSshKey   = "/home/sabotabby/secrets/github/botkey";
   botGitName  = "Lily-Jiji";
   botGitEmail = "salahdin.ur-rehman@proton.me";
-  repoUrl     = "git@github.com:salarehman/configurations.git"; 
-  # -----------------------------------------------------------------
-
-  gitBotConfig = pkgs.writeText "git-bot-config" ''
-    [user]
-      name = ${botGitName}
-      email = ${botGitEmail}
-    [core]
-      sshCommand = "${pkgs.openssh}/bin/ssh -i ${botSshKey} -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
-  '';
+  repoUrl     = "git@github.com:salarehman/configurations.git";
 
   backupScript = pkgs.writeShellScript "nixos-config-backup" ''
     set -euo pipefail
     cd "${configDir}"
+
+    export GIT_SSH_COMMAND="${pkgs.openssh}/bin/ssh -i ${botSshKey} -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
 
     watch() {
       ${pkgs.inotify-tools}/bin/inotifywait -r -e modify,create,delete,move \
@@ -33,7 +22,6 @@ let
       ${pkgs.inotify-tools}/bin/inotifywait -r -e modify,create,delete,move \
         --exclude '\.git' "${configDir}" >/dev/null 2>&1
 
-      # Debounce: keep waiting until a 10s quiet period passes
       while watch 10; do :; done
 
       ${pkgs.git}/bin/git add -A
@@ -41,7 +29,8 @@ let
       if ! ${pkgs.git}/bin/git diff --cached --quiet; then
         TIMESTAMP="$(date +"%Y-%m-%d_%H-%M-%S")"
         HOST="$(cat /etc/hostname)"
-        ${pkgs.git}/bin/git commit -m "auto-backup: ''${HOST} ''${TIMESTAMP}"
+        ${pkgs.git}/bin/git -c user.name="${botGitName}" -c user.email="${botGitEmail}" \
+          commit -m "auto-backup: ''${HOST} ''${TIMESTAMP}"
         ${pkgs.git}/bin/git push origin HEAD
       fi
     done
@@ -50,18 +39,16 @@ let
   setupScript = pkgs.writeShellScript "nixos-config-backup-setup" ''
     set -euo pipefail
 
-    # 1. Generate the bot's SSH key, only if it doesn't already exist.
     if [ ! -f "${botSshKey}" ]; then
       mkdir -p "$(dirname "${botSshKey}")"
       ${pkgs.openssh}/bin/ssh-keygen -t ed25519 -f "${botSshKey}" -C "${botGitName}" -N ""
+      chown sabotabby:users "$(dirname "${botSshKey}")" "${botSshKey}" "${botSshKey}.pub"
       chmod 700 "$(dirname "${botSshKey}")"
       chmod 600 "${botSshKey}"
       chmod 644 "${botSshKey}.pub"
-      echo "==> Generated new bot SSH key at ${botSshKey}.pub — you still need to add it to GitHub as a Deploy Key."
+      echo "==> Generated new bot SSH key at ${botSshKey}.pub — add it to GitHub as a Deploy Key."
     fi
 
-    # 2. Turn configDir into a git repo pointed at your GitHub repo,
-    #    only if it isn't one already.
     if [ ! -d "${configDir}/.git" ]; then
       cd "${configDir}"
       ${pkgs.git}/bin/git init
@@ -71,22 +58,10 @@ let
   '';
 in
 {
-  # Runs on every `nixos-rebuild switch`, but both steps inside are
-  # idempotent (check-before-act), so it's safe to rebuild repeatedly.
   system.activationScripts.nixosConfigBackupSetup = {
     text = "${setupScript}";
     deps = [];
   };
-
-  # Applies the bot identity + SSH key ONLY when git is run inside
-  # configDir — your normal git usage elsewhere is untouched.
-  # NOTE: this manages the whole /etc/gitconfig file. If you later add
-  # other global git settings, add them here too or they'll be
-  # overwritten on rebuild.
-  environment.etc."gitconfig".text = ''
-    [includeIf "gitdir:${configDir}/"]
-      path = ${gitBotConfig}
-  '';
 
   systemd.services.nixos-config-backup = {
     description = "Auto-commit and push NixOS config changes to GitHub";
@@ -103,5 +78,3 @@ in
     };
   };
 }
-
-# Hellooo test test test
