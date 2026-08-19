@@ -27,7 +27,7 @@
 				modules = [
 
 					./configuration.nix
-					
+					./config-backup.nix	
 				];
 			};
 		};
