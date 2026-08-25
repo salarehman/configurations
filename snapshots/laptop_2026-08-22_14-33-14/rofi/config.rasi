@@ -1,0 +1,7 @@
+configuration {
+ modi: "window,drun,ssh,combi";
+ font: "hack 10";
+ combi-modi: "window,drun,ssh";
+ }
+
+@theme "/nix/store/hqnbljb14q0yaxhhvi38pd39bgblv7m8-rofi-2.0.0/share/rofi/themes/iggy.rasi"
