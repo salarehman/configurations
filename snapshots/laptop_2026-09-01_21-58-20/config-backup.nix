@@ -1,0 +1,126 @@
+{ config, pkgs, ... }:
+
+let
+  # -----------------------------------------------------------------
+  configDir       = "/home/sabotabby/.config";
+  snapshotRepoDir = "/home/sabotabby/config-snapshots";
+  botSshKey       = "/home/sabotabby/secrets/github/botkey";
+  botGitName      = "Lily-Jiji";
+  botGitEmail     = "salahdin.ur-rehman@proton.me";
+  repoUrl         = "git@github.com:salarehman/configurations.git";
+  # -----------------------------------------------------------------
+
+    # Git wrapper for bot account
+  gitBot = pkgs.writeShellScriptBin "git-bot" ''
+    export GIT_SSH_COMMAND="${pkgs.openssh}/bin/ssh -i ${botSshKey} -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
+    exec ${pkgs.git}/bin/git "$@"
+  '';
+
+backupScript = pkgs.writeShellScript "nixos-config-backup" ''
+  set -euo pipefail
+  export PATH="${pkgs.hostname}/bin:${pkgs.coreutils}/bin:${pkgs.rsync}/bin:${pkgs.git}/bin:${pkgs.openssh}/bin:$PATH"
+  export GIT_SSH_COMMAND="${pkgs.openssh}/bin/ssh -i ${botSshKey} -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
+
+  snapshot() {
+    HOST="$(hostname)"
+    TIMESTAMP="$(date +"%Y-%m-%d_%H-%M-%S")"
+    NAME="''${HOST}_''${TIMESTAMP}"
+    DEST="${snapshotRepoDir}/snapshots/''${NAME}"
+
+    mkdir -p "$DEST"
+    rsync -a --exclude='.git' --exclude='secrets' "${configDir}/" "$DEST/"
+
+    cd "${snapshotRepoDir}"
+    
+    # Pull latest changes if possible
+    ${pkgs.git}/bin/git pull origin main --rebase || true
+    
+    # Create main branch if it doesn't exist
+    if ! ${pkgs.git}/bin/git show-ref --verify --quiet refs/heads/main; then
+      ${pkgs.git}/bin/git checkout -b main
+    fi
+    
+    ${pkgs.git}/bin/git add "snapshots/''${NAME}"
+    
+    if ! ${pkgs.git}/bin/git diff --cached --quiet; then
+      ${pkgs.git}/bin/git -c user.name="${botGitName}" -c user.email="${botGitEmail}" \
+        commit -m "snapshot: ''${NAME}"
+      ${pkgs.git}/bin/git push -u origin main || true
+    else
+      rmdir "$DEST" 2>/dev/null || true
+    fi
+  }
+
+  snapshot
+'';
+
+
+  setupScript = pkgs.writeShellScript "nixos-config-backup-setup" ''
+    set -euo pipefail
+
+    if [ ! -f "${botSshKey}" ]; then
+      mkdir -p "$(dirname "${botSshKey}")"
+      ${pkgs.openssh}/bin/ssh-keygen -t ed25519 -f "${botSshKey}" -C "${botGitName}" -N ""
+      chown sabotabby:users "$(dirname "${botSshKey}")" "${botSshKey}" "${botSshKey}.pub"
+      chmod 700 "$(dirname "${botSshKey}")"
+      chmod 600 "${botSshKey}"
+      chmod 644 "${botSshKey}.pub"
+      echo "==> Generated new bot SSH key at ${botSshKey}.pub — add it to GitHub as a Deploy Key."
+    fi
+
+    if [ ! -d "${snapshotRepoDir}/.git" ]; then
+      export GIT_SSH_COMMAND="${pkgs.openssh}/bin/ssh -i ${botSshKey} -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
+      mkdir -p "${snapshotRepoDir}"
+      ${pkgs.git}/bin/git clone "${repoUrl}" "${snapshotRepoDir}" || true
+      cd "${snapshotRepoDir}"
+      ${pkgs.git}/bin/git checkout -b main 2>/dev/null || ${pkgs.git}/bin/git checkout main 2>/dev/null || true
+      chown -R sabotabby:users "${snapshotRepoDir}"
+      echo "==> Cloned snapshot repo into ${snapshotRepoDir}"
+    fi
+  '';
+in
+{
+  # Setup script (runs once)
+  system.activationScripts.nixosConfigBackupSetup = {
+    text = "${setupScript}";
+    deps = [];
+  };
+
+  # Run on every NixOS rebuild ← THIS IS WHERE IT GOES
+  system.activationScripts.nixosConfigBackupOnRebuild = {
+    text = ''
+      if [ -f "${backupScript}" ]; then
+        ${backupScript} || true
+      fi
+    '';
+    deps = [];
+  };
+
+  # Service that runs on system start
+  systemd.services.nixos-config-backup = {
+    description = "Snapshot NixOS config on boot";
+    after = [ "network-online.target" ];
+    wants = [ "network-online.target" ];
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig = {
+      ExecStart = "${backupScript}";
+      Type = "oneshot";
+      RemainAfterExit = true;
+      User = "sabotabby";
+    };
+  };
+
+  # Service that runs on system shutdown
+  systemd.services.nixos-config-backup-shutdown = {
+    description = "Snapshot NixOS config on shutdown";
+    before = [ "shutdown.target" ];
+    wants = [ "shutdown.target" ];
+    serviceConfig = {
+      ExecStart = "${backupScript}";
+      Type = "oneshot";
+      RemainAfterExit = true;
+      User = "sabotabby";
+    };
+    wantedBy = [ "shutdown.target" ];
+  };
+}
