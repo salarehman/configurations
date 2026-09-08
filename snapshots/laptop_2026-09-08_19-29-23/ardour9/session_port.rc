@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<SessionPorts>
+  <Click>
+    <IO name="Click" id="80" direction="Output" default-type="audio">
+      <Port name="Click/audio_out 1" type="audio" direction="Output">
+        <ExtConnection for="ALSA;;sof-hda-dsp"/>
+        <ExtConnection for="ALSA;;sof-hda-dsp" other="system:playback_1"/>
+        <ExtConnection for="ALSA;;sof-hda-dsp" other="system:playback_2"/>
+      </Port>
+    </IO>
+    <Processor id="81" name="Amp" active="1" user-latency="0" use-user-latency="0" type="amp">
+      <Automation>
+        <AutomationList automation-id="gain" id="78" interpolation-style="Exponential" time-domain="AudioTime" state="Off"/>
+      </Automation>
+      <Controllable name="gaincontrol" id="79" flags="GainLike" value="1"/>
+    </Processor>
+  </Click>
+  <Auditioner>
+    <DirectOut>
+      <IO name="auditioner" id="153" direction="Output" default-type="audio">
+        <Port name="auditioner/audio_out 1" type="audio" direction="Output">
+          <ExtConnection for="ALSA;;sof-hda-dsp"/>
+          <ExtConnection for="ALSA;;sof-hda-dsp" other="system:playback_1"/>
+        </Port>
+        <Port name="auditioner/audio_out 2" type="audio" direction="Output">
+          <ExtConnection for="ALSA;;sof-hda-dsp"/>
+          <ExtConnection for="ALSA;;sof-hda-dsp" other="system:playback_2"/>
+        </Port>
+      </IO>
+    </DirectOut>
+  </Auditioner>
+  <LTC>
+    <Port name="LTC-Out" type="audio" direction="Output"/>
+  </LTC>
+</SessionPorts>
